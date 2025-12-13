@@ -87,6 +87,10 @@ services:
             - '.:/var/www/html'
         networks:
             - sail
+        environment:
+            WWWUSER: '${WWWUSER}'
+            WWWGROUP: '${WWWGROUP}'
+            LARAVEL_SAIL: '1'
         command: php artisan queue:work
 
     scheduler:
@@ -99,6 +103,10 @@ services:
             - '.:/var/www/html'
         networks:
             - sail
+        environment:
+            WWWUSER: '${WWWUSER}'
+            WWWGROUP: '${WWWGROUP}'
+            LARAVEL_SAIL: '1'
         command: php artisan schedule:work
 
 networks:
