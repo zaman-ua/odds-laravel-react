@@ -65,6 +65,42 @@ services:
                 - ping
             retries: 3
             timeout: 5s
+
+    redisinsight:
+        image: redis/redisinsight:latest
+        ports:
+            - "5540:5540"
+        volumes:
+            - sail-redisinsight:/data
+        depends_on:
+            - redis
+        networks:
+            - sail
+
+    queue:
+        image: sail-8.5/app
+        user: "${WWWUSER}:${WWWGROUP}"
+        depends_on:
+            - redis
+            - mysql
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        command: php artisan queue:work
+
+    scheduler:
+        image: sail-8.5/app
+        user: "${WWWUSER}:${WWWGROUP}"
+        depends_on:
+            - redis
+            - mysql
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        command: php artisan schedule:work
+
 networks:
     sail:
         driver: bridge
@@ -72,4 +108,6 @@ volumes:
     sail-mysql:
         driver: local
     sail-redis:
+        driver: local
+    sail-redisinsight:
         driver: local

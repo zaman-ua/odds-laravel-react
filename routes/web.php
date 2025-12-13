@@ -7,4 +7,5 @@ Route::get('/', function () {
 });
 
 
-Route::get('/lines', fn () => view('lines.index'));
+Route::get('/lines', fn () => view('lines.index'))
+    ->name('lines.index');
