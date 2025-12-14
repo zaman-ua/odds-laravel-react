@@ -14,13 +14,7 @@ bootstrap:
 init: bootstrap
 	$(SAIL) up -d --build
 	$(SAIL) composer install --no-interaction --prefer-dist
-	$(SAIL) artisan optimize:clear
-
-init:
 	@test -f .env || (cp .env.example .env && echo "Created .env from .env.example")
-	composer install
-	$(SAIL) build #--no-cache
-	$(SAIL) up -d
 	@echo "Fixing permissions..."
 	#sudo rm -f storage/logs/laravel.log || true
 	#sudo mkdir -p storage/logs bootstrap/cache
