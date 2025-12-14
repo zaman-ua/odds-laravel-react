@@ -1,5 +1,21 @@
 SAIL=./vendor/bin/sail
 
+bootstrap:
+	@test -f vendor/autoload.php || ( \
+	  echo "vendor/ missing -> installing via Docker..."; \
+	  docker run --rm \
+	    -u "$$(id -u):$$(id -g)" \
+	    -v "$$(pwd):/var/www/html" \
+	    -w /var/www/html \
+	    laravelsail/php84-composer:latest \
+	    composer install --no-interaction --prefer-dist --no-scripts --ignore-platform-reqs; \
+	)
+
+init: bootstrap
+	$(SAIL) up -d --build
+	$(SAIL) composer install --no-interaction --prefer-dist
+	$(SAIL) artisan optimize:clear
+
 init:
 	@test -f .env || (cp .env.example .env && echo "Created .env from .env.example")
 	composer install
