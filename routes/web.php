@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\LinesController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -7,5 +8,5 @@ Route::get('/', function () {
 });
 
 
-Route::get('/lines', fn () => view('lines.index'))
+Route::get('/lines', LinesController::class)
     ->name('lines.index');

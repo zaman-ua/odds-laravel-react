@@ -1,6 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+
 export function LinesWidget({ sport }) {
+    if (!sport) {
+        return <div style={{ opacity: 0.6 }}>Выберите спорт слева — тогда покажу линию.</div>;
+    }
+
+
     const versionRef = useRef(null);
     const etagRef = useRef(null);
 
