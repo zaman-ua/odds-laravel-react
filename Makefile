@@ -30,7 +30,7 @@ down:
 	$(SAIL) down
 
 rebuild:
-	$(SAIL) build #--no-cache
+	$(SAIL) build --no-cache
 	$(SAIL) up -d
 
 build:
