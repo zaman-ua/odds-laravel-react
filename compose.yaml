@@ -1,5 +1,7 @@
 services:
     laravel.test:
+        env_file:
+            - ./.env.sail
         build:
             context: './vendor/laravel/sail/runtimes/8.5'
             dockerfile: Dockerfile
@@ -20,6 +22,7 @@ services:
             IGNITION_LOCAL_SITES_PATH: '${PWD}'
         volumes:
             - '.:/var/www/html'
+            - './.env.sail:/var/www/html/.env'
         networks:
             - sail
         depends_on:
@@ -30,14 +33,15 @@ services:
         ports:
             - '${FORWARD_DB_PORT:-3306}:3306'
         environment:
-            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
             MYSQL_ROOT_HOST: '%'
-            MYSQL_DATABASE: '${DB_DATABASE}'
-            MYSQL_USER: '${DB_USERNAME}'
-            MYSQL_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ROOT_PASSWORD: 'password'
+            MYSQL_DATABASE: 'odds'
+            MYSQL_USER: 'sail'
+            MYSQL_PASSWORD: 'password'
             MYSQL_ALLOW_EMPTY_PASSWORD: 1
             MYSQL_EXTRA_OPTIONS: '${MYSQL_EXTRA_OPTIONS:-}'
         volumes:
+            - './.env.sail:/var/www/html/.env'
             - 'sail-mysql:/var/lib/mysql'
             - './vendor/laravel/sail/database/mysql/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh'
         networks:
@@ -56,6 +60,7 @@ services:
             - '${FORWARD_REDIS_PORT:-6379}:6379'
         volumes:
             - 'sail-redis:/data'
+            - './.env.sail:/var/www/html/.env'
         networks:
             - sail
         healthcheck:
@@ -79,6 +84,7 @@ services:
             RI_REDIS_DB: "0"
         volumes:
             - sail-redisinsight:/data
+            - './.env.sail:/var/www/html/.env'
         depends_on:
             - redis
         networks:
@@ -93,13 +99,14 @@ services:
         working_dir: /var/www/html
         volumes:
             - '.:/var/www/html'
+            - './.env.sail:/var/www/html/.env'
         networks:
             - sail
         environment:
             WWWUSER: '${WWWUSER}'
             WWWGROUP: '${WWWGROUP}'
             LARAVEL_SAIL: '1'
-        command: php artisan queue:work --sleep=1 --tries=3 --timeout=90
+        command: php artisan queue:work
         restart: unless-stopped
 
     scheduler:
@@ -111,6 +118,7 @@ services:
         working_dir: /var/www/html
         volumes:
             - '.:/var/www/html'
+            - './.env.sail:/var/www/html/.env'
         networks:
             - sail
         environment:

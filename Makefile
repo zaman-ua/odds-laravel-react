@@ -39,6 +39,11 @@ build:
 artisan:
 	$(SAIL) artisan $(cmd)
 
+fresh:
+	$(SAIL) artisan migrate:fresh --seed
+
+
+
 composer:
 	$(SAIL) composer $(cmd)
 
