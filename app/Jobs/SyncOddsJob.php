@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\Sport;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -73,9 +74,34 @@ final class SyncOddsJob implements ShouldQueue
         // --- конец блока "шевеления" ---
 
         // 3) Пишем снимок в Redis + bump версии
-        Redis::set($dataKey, json_encode($payload, JSON_UNESCAPED_UNICODE));
-        Redis::set("odds:last_sync:sport:{$sportKey}", now()->toIso8601String());
-        Redis::incr("odds:ver:sport:{$sportKey}");
+//        Redis::set($dataKey, json_encode($payload, JSON_UNESCAPED_UNICODE));
+//        Redis::set("odds:last_sync:sport:{$sportKey}", now()->toIso8601String());
+//        Redis::incr("odds:ver:sport:{$sportKey}");
+
+        // 3) Пишем снимок в public/lines/{sport}.json (атомарно)
+        $dir = public_path('lines-cache');
+        File::ensureDirectoryExists($dir);
+
+        $safe = preg_replace('~[^a-zA-Z0-9._-]+~', '_', $sportKey);
+        $final = $dir . DIRECTORY_SEPARATOR . $safe . '.json';
+        $tmp   = $dir . DIRECTORY_SEPARATOR . '.' . $safe . '.json.tmp';
+
+        // можно добавить мету в payload (удобно для дебага)
+        $payload['sport'] = $sportKey;
+        $payload['generated_at'] = now()->toIso8601String();
+
+        $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        if ($json === false) {
+            throw new \RuntimeException('Failed to encode JSON: ' . json_last_error_msg());
+        }
+
+        File::put($tmp, $json);
+        @chmod($tmp, 0644);
+
+        // rename в рамках одного FS — атомарно
+        rename($tmp, $final);
+
     }
 
     private function buildFromFile(string $sportKey): array

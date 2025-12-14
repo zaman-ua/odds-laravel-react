@@ -1,13 +1,6 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
-
-export function LinesWidget({sport}) {
-    if (!sport) {
-        return <div style={{opacity: 0.6}}>Выберите спорт слева — тогда покажу линию.</div>;
-    }
-
-
-    const versionRef = useRef(null);
+export function LinesWidget({ sport }) {
     const etagRef = useRef(null);
 
     const timerRef = useRef(null);
@@ -16,12 +9,10 @@ export function LinesWidget({sport}) {
     const prevOddsRef = useRef(new Map()); // id -> { odd_1, odd_x, odd_2 }
     const hasLoadedRef = useRef(false);
 
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [items, setItems] = useState([]);
-    const [version, setVersion] = useState(null);
-
-    // changed[id] = { odd_1: true, odd_x: true, odd_2: true }
-    const [changed, setChanged] = useState({});
+    const [version, setVersion] = useState(null); // будем хранить ETag/Last-Modified (для дебага)
+    const [changed, setChanged] = useState({}); // changed[id] = { odd_1:true, odd_x:true, odd_2:true }
 
     const normOdd = (v) => {
         if (v === null || v === undefined || v === '') return null;
@@ -36,7 +27,7 @@ export function LinesWidget({sport}) {
 
     const fmtTime = (iso) => {
         if (!iso) return '-';
-        return new Date(iso).toLocaleString('et-EE', {hour12: false});
+        return new Date(iso).toLocaleString('et-EE', { hour12: false });
     };
 
     const cellStyle = (isChanged) => ({
@@ -47,11 +38,41 @@ export function LinesWidget({sport}) {
         whiteSpace: 'nowrap',
     });
 
-    async function loadData() {
-        const res = await fetch(`/api/lines?sport=${encodeURIComponent(sport)}`);
+    const fileUrl = (activeSport) =>
+        `/lines-cache/${encodeURIComponent(activeSport)}.json`;
 
-        // not modified
-        if (res.status === 304) return;
+    async function loadData(activeSport) {
+        const url = fileUrl(activeSport);
+
+        const res = await fetch(url, { cache: 'no-store' });
+
+        // файла нет (ещё не сгенерен)
+        if (res.status === 404) {
+            setItems([]);
+            setLoading(false);
+            hasLoadedRef.current = false;
+            return;
+        }
+
+        // любые ошибки/редиректы
+        if (!res.ok) {
+            const text = await res.text().catch(() => '');
+            console.warn('loadData failed', { url, status: res.status, text: text.slice(0, 200) });
+            setItems([]);
+            setLoading(false);
+            hasLoadedRef.current = false;
+            return;
+        }
+
+        const ct = res.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+            const text = await res.text().catch(() => '');
+            console.warn('loadData not json', { url, status: res.status, ct, text: text.slice(0, 200) });
+            setItems([]);
+            setLoading(false);
+            hasLoadedRef.current = false;
+            return;
+        }
 
         const data = await res.json();
         const next = Array.isArray(data.items) ? data.items : [];
@@ -73,9 +94,7 @@ export function LinesWidget({sport}) {
             if (prev.odd_x !== nx) ch.odd_x = true;
             if (prev.odd_2 !== n2) ch.odd_2 = true;
 
-            if (Object.keys(ch).length) {
-                changes[r.id] = ch;
-            }
+            if (Object.keys(ch).length) changes[r.id] = ch;
         }
 
         // обновляем prev map
@@ -102,50 +121,67 @@ export function LinesWidget({sport}) {
         flashTimerRef.current = setTimeout(() => setChanged({}), 1800);
     }
 
-    async function tick() {
+    async function tick(activeSport) {
         try {
             const headers = {};
             if (etagRef.current) headers['If-None-Match'] = etagRef.current;
 
-            const res = await fetch(
-                `/api/lines/version?sport=${encodeURIComponent(sport)}`,
-                {headers}
-            );
+            const url = fileUrl(activeSport);
+
+            const res = await fetch(url, {
+                method: 'HEAD',
+                headers,
+                cache: 'no-store',
+            });
+
+            // файла нет — просто ждём следующий тик
+            if (res.status === 404) {
+                return;
+            }
 
             if (res.status === 200) {
-                etagRef.current = res.headers.get('ETag');
-                const meta = await res.json();
+                // Используем ETag если есть, иначе Last-Modified
+                const sig =
+                    res.headers.get('ETag') ||
+                    res.headers.get('Last-Modified') ||
+                    null;
 
-                const nextVersion = meta?.version ?? 0;
-
-                // если версия изменилась или мы еще ни разу не загрузили данные
-                if (versionRef.current !== nextVersion || !hasLoadedRef.current) {
-                    versionRef.current = nextVersion;
-                    setVersion(nextVersion);
-                    await loadData();
+                if (etagRef.current !== sig || !hasLoadedRef.current) {
+                    etagRef.current = sig;
+                    setVersion(sig); // чисто для отображения
+                    await loadData(activeSport);
                 }
             }
             // 304 => ничего не делаем
         } finally {
-            const base = document.hidden ? 15000 : 5000; // 5s активно, 15s в фоне
-            const jitter = Math.floor(Math.random() * 250); // небольшой джиттер
-            timerRef.current = setTimeout(tick, base + jitter);
+            const base = document.hidden ? 15000 : 5000;
+            const jitter = Math.floor(Math.random() * 250);
+            timerRef.current = setTimeout(() => tick(activeSport), base + jitter);
         }
     }
 
     useEffect(() => {
-        // сбрасываем состояние при смене sport
-        versionRef.current = null;
+        // очистка таймеров
+        if (timerRef.current) clearTimeout(timerRef.current);
+        if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+
+        // сброс состояния при смене sport
         etagRef.current = null;
         prevOddsRef.current = new Map();
         hasLoadedRef.current = false;
 
-        setLoading(true);
         setItems([]);
         setVersion(null);
         setChanged({});
 
-        tick();
+        // если спорт не выбран — не делаем запросов
+        if (!sport) {
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+        tick(sport);
 
         return () => {
             if (timerRef.current) clearTimeout(timerRef.current);
@@ -154,20 +190,26 @@ export function LinesWidget({sport}) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sport]);
 
+    if (!sport) {
+        return <div style={{ opacity: 0.6 }}>Выберите спорт слева — тогда покажу линию.</div>;
+    }
+
+    if (loading) {
+        return <div style={{ opacity: 0.6 }}>React: загружаю…</div>;
+    }
+
     const rows = [...items].sort(
         (a, b) => new Date(a.commence_time) - new Date(b.commence_time)
     );
 
-    if (loading) return <div style={{opacity: 0.6}}>React: загружаю…</div>;
-
     return (
         <div>
-            <div style={{fontSize: 12, opacity: 0.6, marginBottom: 8}}>
-                sport: {sport} / version: {version ?? '-'} / rows: {rows.length}
+            <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 8 }}>
+                sport: {sport} / etag: {version ?? '-'} / rows: {rows.length}
             </div>
 
-            <div style={{overflowX: 'auto'}}>
-                <table style={{width: '100%', borderCollapse: 'collapse'}}>
+            <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                     <tr>
                         {['Sport', 'Time', 'Home', 'Away', '1', 'X', '2'].map((h) => (
