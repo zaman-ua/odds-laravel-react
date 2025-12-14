@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { LinesWidget } from './LinesWidget';
+import React, {useEffect, useState} from 'react';
+import {LinesWidget} from './LinesWidget';
 
 export function LinesApp() {
     const [sport, setSport] = useState(null); // пока не выбран — таблица пустая
@@ -14,5 +14,5 @@ export function LinesApp() {
         return () => window.removeEventListener('lines:sport-change', handler);
     }, []);
 
-    return <LinesWidget sport={sport} />;
+    return <LinesWidget sport={sport}/>;
 }

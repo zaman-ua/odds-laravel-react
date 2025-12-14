@@ -23,21 +23,19 @@
                 <div style="max-height:70vh; overflow-y:auto;">
                     @foreach($groups as $g)
                         <details class="sport-group" style="margin-bottom:10px;">
-                            <summary
-                                style="
-                            list-style:none;
-                            cursor:pointer;
-                            padding:8px 10px;
-                            border:1px solid #eee;
-                            border-radius:8px;
-                            background:#fafafa;
-                            user-select:none;
-                        "
-                            >
+                            <summary style="
+                                    list-style:none;
+                                    cursor:pointer;
+                                    padding:8px 10px;
+                                    border:1px solid #eee;
+                                    border-radius:8px;
+                                    background:#fafafa;
+                                    user-select:none;
+                                ">
                                 <span style="font-weight:600;">{{ $g['group'] }}</span>
                                 <span style="opacity:.6; font-size:12px; margin-left:6px;">
-                            ({{ count($g['sports']) }})
-                        </span>
+                                    ({{ count($g['sports']) }})
+                                </span>
                             </summary>
 
                             <div style="margin-top:8px; padding-left:8px;">
@@ -47,17 +45,16 @@
                                         class="sport-item"
                                         data-key="{{ $s['key'] }}"
                                         style="
-                                    display:block;
-                                    width:100%;
-                                    text-align:left;
-                                    padding:8px 10px;
-                                    margin-bottom:6px;
-                                    border-radius:8px;
-                                    border:1px solid #eee;
-                                    background:#fff;
-                                    cursor:pointer;
-                                "
-                                    >
+                                            display:block;
+                                            width:100%;
+                                            text-align:left;
+                                            padding:8px 10px;
+                                            margin-bottom:6px;
+                                            border-radius:8px;
+                                            border:1px solid #eee;
+                                            background:#fff;
+                                            cursor:pointer;
+                                        ">
                                         {{ $s['title'] }}
                                     </button>
                                 @endforeach

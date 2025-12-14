@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 
 
-export function LinesWidget({ sport }) {
+export function LinesWidget({sport}) {
     if (!sport) {
-        return <div style={{ opacity: 0.6 }}>Выберите спорт слева — тогда покажу линию.</div>;
+        return <div style={{opacity: 0.6}}>Выберите спорт слева — тогда покажу линию.</div>;
     }
 
 
@@ -36,7 +36,7 @@ export function LinesWidget({ sport }) {
 
     const fmtTime = (iso) => {
         if (!iso) return '-';
-        return new Date(iso).toLocaleString('et-EE', { hour12: false });
+        return new Date(iso).toLocaleString('et-EE', {hour12: false});
     };
 
     const cellStyle = (isChanged) => ({
@@ -50,6 +50,7 @@ export function LinesWidget({ sport }) {
     async function loadData() {
         const res = await fetch(`/api/lines?sport=${encodeURIComponent(sport)}`);
 
+        // not modified
         if (res.status === 304) return;
 
         const data = await res.json();
@@ -108,7 +109,7 @@ export function LinesWidget({ sport }) {
 
             const res = await fetch(
                 `/api/lines/version?sport=${encodeURIComponent(sport)}`,
-                { headers }
+                {headers}
             );
 
             if (res.status === 200) {
@@ -157,16 +158,16 @@ export function LinesWidget({ sport }) {
         (a, b) => new Date(a.commence_time) - new Date(b.commence_time)
     );
 
-    if (loading) return <div style={{ opacity: 0.6 }}>React: загружаю…</div>;
+    if (loading) return <div style={{opacity: 0.6}}>React: загружаю…</div>;
 
     return (
         <div>
-            <div style={{ fontSize: 12, opacity: 0.6, marginBottom: 8 }}>
+            <div style={{fontSize: 12, opacity: 0.6, marginBottom: 8}}>
                 sport: {sport} / version: {version ?? '-'} / rows: {rows.length}
             </div>
 
-            <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div style={{overflowX: 'auto'}}>
+                <table style={{width: '100%', borderCollapse: 'collapse'}}>
                     <thead>
                     <tr>
                         {['Sport', 'Time', 'Home', 'Away', '1', 'X', '2'].map((h) => (

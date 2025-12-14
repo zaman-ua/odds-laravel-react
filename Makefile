@@ -12,6 +12,7 @@ bootstrap:
 	)
 
 init: bootstrap
+	$(SAIL) down
 	$(SAIL) up -d --build
 	$(SAIL) composer install --no-interaction --prefer-dist
 	@test -f .env || (cp .env.example .env && echo "Created .env from .env.example")

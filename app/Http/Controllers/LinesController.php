@@ -26,16 +26,16 @@ class LinesController extends Controller
         ]);
 
         $groups = $sportsForUi
-        ->groupBy('group')
-        ->map(fn ($items, $group) => [
-            'group'  => $group,
-            'sports' => $items->values()->all(),
-        ])
+            ->groupBy('group')
+            ->map(fn ($items, $group) => [
+                'group'  => $group,
+                'sports' => $items->values()->all(),
+            ])
         ->values()
         ->all();
 
-    return view('lines.index', [
-        'groups' => $groups,
+        return view('lines.index', [
+            'groups' => $groups,
         ]);
     }
 }
