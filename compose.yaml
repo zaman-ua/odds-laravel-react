@@ -86,7 +86,6 @@ services:
 
     queue:
         image: sail-8.5/app
-        user: "${WWWUSER}:${WWWGROUP}"
         depends_on:
             - laravel.test
             - redis
@@ -100,13 +99,11 @@ services:
             WWWUSER: '${WWWUSER}'
             WWWGROUP: '${WWWGROUP}'
             LARAVEL_SAIL: '1'
-        entrypoint: ["sh","-lc"]
-        command: php artisan queue:work
+        command: php artisan queue:work --sleep=1 --tries=3 --timeout=90
         restart: unless-stopped
 
     scheduler:
         image: sail-8.5/app
-        user: "${WWWUSER}:${WWWGROUP}"
         depends_on:
             - laravel.test
             - redis
@@ -122,6 +119,7 @@ services:
             LARAVEL_SAIL: '1'
         command: php artisan schedule:work
         restart: unless-stopped
+
 
 networks:
     sail:
